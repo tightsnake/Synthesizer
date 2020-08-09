@@ -40,8 +40,8 @@ int main(int argc, char ** argv){
 	uint32_t length; // @ 44100 Hz
 	uint32_t data;
 
-	double step;
-	double freq = 440.0;
+	float step;
+	float freq;
 
 	Header header = {
 	.ChunkID = {'R','I','F','F'},
@@ -58,8 +58,8 @@ int main(int argc, char ** argv){
 	};
 
 
-	if(argc != 2 ){
-		fprintf(stdout, "Invalid Usage:\n./a.out <length>\n");
+	if(argc != 3 ){
+		fprintf(stdout, "Invalid Usage:\n./a.out <length> <freq>\n");
 		return -1;
 	}
 
@@ -70,7 +70,13 @@ int main(int argc, char ** argv){
 		return -1;
 	}
 
-	step = (double) length / freq;
+	freq = strtof(argv[2], NULL);
+	if(errno){
+		fprintf(stderr, "strtof() errno %d %s\n", errno, strerror(errno));
+		return -1;
+	}
+
+	step = freq / 44100.0f;
 
 	header.Subchunk2Size = length * 4;
 	header.ChunkSize = 36 + header.Subchunk2Size;
@@ -83,8 +89,7 @@ int main(int argc, char ** argv){
 	fwrite(&header, sizeof(header), 1, file);
 
 	for(int i = 0; i < length; i++){
-		data = sin(2.0 * PI * (float) i * step) * 100.F;
-		data = reverseEndian(data);
+		data = sin(2.0f * PI * (float) i * step) * 0xF000000 + 0x0FFFFFFF;
 		fwrite(&data, sizeof(data), 1, file);
 	}
 	
